@@ -84,7 +84,35 @@ int main(void)
         BeginMode3D(camera);
 
         DrawPlane((Vector3) { 0.0f, 0.0f, 0.0f }, (Vector2) { 48.0f, 48.0f }, LIME); // Draw ground
-        DrawCube((Vector3) { 8.0f, 2.5f, 4.0f }, 2.0f, 2.0f, 2.0f, GOLD); // Draw a yellow wall
+
+        // Define yellow cube's position and size
+        Vector3 cubePos = { 8.0f, 2.5f, 4.0f };
+        Vector3 cubeSize = { 2.0f, 2.0f, 2.0f };
+        // Draw all previous hit marks on the yellow cube (in local space)
+        static Vector3 hitPoints[128];
+        static int hitCount = 0;
+        DrawCube((Vector3)cubePos, 2.0f, 2.0f, 2.0f, GOLD); // Draw a yellow wall
+
+        // Detect mouse left click and ray-cube intersection
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            // Get mouse position and create a ray from camera
+            Vector2 mousePos = GetMousePosition();
+            Ray ray = GetMouseRay(mousePos, camera);
+
+            RayCollision collision = GetRayCollisionBox(ray, (BoundingBox) { (Vector3) { cubePos.x - cubeSize.x / 2, cubePos.y - cubeSize.y / 2, cubePos.z - cubeSize.z / 2 }, (Vector3) { cubePos.x + cubeSize.x / 2, cubePos.y + cubeSize.y / 2, cubePos.z + cubeSize.z / 2 } });
+
+            if (collision.hit && hitCount < 128) {
+                // Store hit point in local cube space
+                Vector3 local = Vector3Subtract(collision.point, cubePos);
+                hitPoints[hitCount++] = local;
+            }
+        }
+
+        // Draw all hit marks (projected to current cube position)
+        for (int i = 0; i < hitCount; i++) {
+            Vector3 worldPos = Vector3Add((Vector3) { 8.0f, 2.5f, 4.0f }, hitPoints[i]);
+            DrawSphere(worldPos, 1.0f, GRAY);
+        }
 
         EndMode3D();
 
